@@ -2,6 +2,12 @@
 #include "co_sched.h"
 #include "co_sched_API.h"
 
+struct Qnode {
+    int priority;
+    int sleep_time;
+    void (*task_ptr);
+    struct Qnode* next;
+};
 
 struct Qnode * readyQ_root;
 struct Qnode * delayedQ_root;
@@ -20,7 +26,7 @@ int QueTask(void (*task_ptr), unsigned int priority)
 {
     int state = 0;
     struct Qnode * node = (struct Qnode *) malloc(sizeof(struct Qnode));
-    struct Qnode * itr = readyQ_root->next;
+    struct Qnode * itr = readyQ_root;
 
     if (node != NULL)
     {
@@ -37,7 +43,7 @@ int QueTask(void (*task_ptr), unsigned int priority)
         node -> task_ptr = task_ptr;
         node -> next = itr->next;
         node->sleep_time = 0;
-        if (itr == NULL) itr = node;
+        if (itr == NULL) readyQ_root = node;
         else itr->next = node;
     }
     else state = -1; //memory allocation error
@@ -56,7 +62,7 @@ int ReRunME(int delay)
     else 
     {
         struct Qnode * node = (struct Qnode *) malloc(sizeof(struct Qnode));
-        struct Qnode * itr = delayedQ_root->next;
+        struct Qnode * itr = delayedQ_root;
 
         if (node != NULL)
         {
@@ -73,7 +79,7 @@ int ReRunME(int delay)
             node -> task_ptr = running->task_ptr;
             node -> next = itr->next;
             node->sleep_time = delay;
-            if (itr == NULL) itr = node;
+            if (itr == NULL) delayedQ_root = node;
             else itr->next = node;
             free(running);
         }
