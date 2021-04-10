@@ -86,10 +86,17 @@ int ReRunME(int delay)
 								delayedQ_root = node;	
 						}
 						else 
-						{
+							if (itr->sleep_time > delay)
+							{
 								node -> next = itr->next;
-								itr->next = node;
-						}			
+								itr = node;
+							
+							}
+							else
+							{
+									node -> next = itr->next;
+									itr->next = node;
+							}			
 							
         }
         else state = -1; //memory allocation error
@@ -137,7 +144,7 @@ void coop_sched_tick(void)
 
 int decrementAll(int counter)
 {
-		struct Qnode * itr;
+		volatile struct Qnode * itr;
 		itr = delayedQ_root;
 		while (itr != NULL)
 		{
