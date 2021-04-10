@@ -57,15 +57,15 @@ int QueTask(void (*task_ptr), unsigned int priority)
 int ReRunME(int delay)
 {
     int state = 0;
+
     if (delay == 0) 
     {
         state = QueTask(running->task_ptr, running->priority);
 		}
     else 
     {
-        struct Qnode * node = (struct Qnode *) malloc(sizeof(struct Qnode));
-        struct Qnode * itr = delayedQ_root;
-
+				volatile struct Qnode * node = (struct Qnode *) malloc(sizeof(struct Qnode));
+				volatile struct Qnode * itr = delayedQ_root;
         if (node != NULL)
         {
             while (itr != NULL)
@@ -88,18 +88,23 @@ int ReRunME(int delay)
 						else 
 							if (itr->sleep_time > delay)
 							{
-								node -> next = itr->next;
-								itr = node;
+								node -> next = itr;
+								delayedQ_root = node;
 							
 							}
 							else
 							{
 									node -> next = itr->next;
 									itr->next = node;
-							}			
-							
+							}
         }
-        else state = -1; //memory allocation error
+        else 
+				{
+					
+					state = -1; //memory allocation error
+					
+				}
+
     }
     return state;
 }
