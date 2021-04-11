@@ -1,9 +1,11 @@
-// A queue linked list node
+// A queue array entry
+
 struct Qnode {
-    short priority;
-    short sleep_time;
+    int priority;
+    int sleep_time;
     void (*task_ptr);
-    struct Qnode* next;
 };
+
+void swap(struct Qnode * a, struct Qnode * b);
 
 int decrementAll(int counter);
