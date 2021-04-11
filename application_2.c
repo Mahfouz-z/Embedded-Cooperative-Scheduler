@@ -1,6 +1,8 @@
 #include "main.h"
 #include <stdio.h>
 #include "co_sched_API.h"
+#include "application_2.h"
+
 
 volatile uint32_t distance=200;
 volatile uint32_t time=0;
@@ -54,4 +56,5 @@ void hcsr04_read ()
 		err = ReRunME(4);
 	}
 }
+
 	
