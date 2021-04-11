@@ -111,9 +111,11 @@ Each task blinks the on-board LED 4 times with different delays, assuimg correct
 
 500 -> 1000 -> 100 -> 300 -> 50
 
+
+![alt text](https://github.com/Mahfouz-z/Embedded-Cooperative-Scheduler/blob/main/media/ReadyQ_unit_test.mp4?raw=true
 # insert video
 
-### readyQ_unit_test
+### delayedQ_unit_test
 
 This test is designed to test the following:
 - correct initialization of the scheduler
@@ -152,46 +154,15 @@ After the First round of executions the first three tasks will keep running as t
 According to their delay times, order of first execution, and priorities, they will continue execution in the following order: 
 **Task1 -> Task2 -> Task3**
 with delays **250 -> 50 -> 500**
+![alt text](https://github.com/Mahfouz-z/Embedded-Cooperative-Scheduler/blob/main/media/ReadyQ_unit_test.mp4?raw=true)
 # insert video
-
-
-
-## Application 2: Parking sensor
- The program reads data from the ultrasound sensor and calculates the distance of the nearest objects from this data. Then the buzzer is used to produce beeps, the frequency of the beeps reflect the distance of the object from the sensor. 
-
-### Components and Connections
-In this application, we use the MCU board, a buzzer, and an Ultrasound sensor.
-
-### Application API Explanation
-
-This application consists of two tasks; one for reading from the sensor and processing its data, and another one for running the buzzer at the appropriate delays. 
-
-`hcsr04_read`
-
-This function handles the ultrasound sensor. it pulls the pin connected to the TRIG pin of the ultrasonic sensor HIGH for 10 us then it receives data from the ECHO pin. the ECHO pin is set to high for a time period proportional to the distance of the detected object. a flag is raised inside this function for the time the ECHO pin is set to HIGH. 
-during this time, the SytTickHandler interrupt is used to count this time by calling another function `measure_time` 
-distance is calculated using the time that has been incremented during the flag raise. 
-This task uses ReRunMe in order to read continuously from the ultrasound sensor and update the distance
-
-`measure_time`
-
-This function is called inside the SytTickHandler, it checks if the flag is raised and increments the value of time if it is. 
-
-`buzzer_task`
-
-This function checks if the measured distance is less than a certain threshold. if it is, it toggles the buzzer pin and uses ReRunMe to run again after a time period proportional to the distance. 
-if the distance is not within the threshold, the function disables the buzzer and ReRuns again with delay 10 ticks to validate the new distance.
-
-### Priority Choices
-
-The highest priority was given to the bigger and less frequent task which is reading from the ultrasound sensor, while lower priority was given to the buzzer task. 
- 
 
 ## Application 1: Ambient temperature monitor
 This application aims at measuring the temperature from a temperature sensor and compare it to a critical temperature. This critical temperature is preset to 30 degrees Celsius in the application code. The application pulls the temperature from the temperature sensor each 30 seconds, after comparing it with the critical temperature, the micro controller fires an alarm (an LED) if the measured temperature is above the critical temperature. The alarm is only turned off when the temperature is back to lower than the critical value. Furthermore, the application allows a user to edit the predefined critical temperature by connecting the micro controller’s UART 1 through an FTDI to a terminal emulator on any desktop (in our case Tera Term). We implement this application using the implemented cooperative scheduler and cubemx.
 
 ### Components and Connections
 We use STM32L432 as our microcontroller unit, an FTDI, and DS3231. The microcontroller reads the temperature from the DS3231 chip through i2c3 peripheral. Furthermore, it is connected to the PC through the FTDI as discussed in the above section.
+![alt text](https://github.com/Mahfouz-z/Embedded-Cooperative-Scheduler/blob/main/media/application_1_circuit_diagram.jpg?raw=true)
 
 ### Application API Explanation
 
@@ -226,6 +197,41 @@ Converts the critical temperature value characters received on the UART to a flo
 ### Priority Choices
 
 Tasks that run at initialization time only were given the highest priority. After that comes the communication tasks at equal priority for both the UART and the I2C tasks. Finally the least priority was given to the most periodic task the LED blinking.
+
+
+
+
+## Application 2: Parking sensor
+ The program reads data from the ultrasound sensor and calculates the distance of the nearest objects from this data. Then the buzzer is used to produce beeps, the frequency of the beeps reflect the distance of the object from the sensor. 
+
+### Components and Connections
+In this application, we use the MCU board, a buzzer, and an Ultrasound sensor.
+
+![alt text](https://github.com/Mahfouz-z/Embedded-Cooperative-Scheduler/blob/main/media/application2_circuit_diagram.png?raw=true)
+### Application API Explanation
+
+This application consists of two tasks; one for reading from the sensor and processing its data, and another one for running the buzzer at the appropriate delays. 
+
+`hcsr04_read`
+
+This function handles the ultrasound sensor. it pulls the pin connected to the TRIG pin of the ultrasonic sensor HIGH for 10 us then it receives data from the ECHO pin. the ECHO pin is set to high for a time period proportional to the distance of the detected object. a flag is raised inside this function for the time the ECHO pin is set to HIGH. 
+during this time, the SytTickHandler interrupt is used to count this time by calling another function `measure_time` 
+distance is calculated using the time that has been incremented during the flag raise. 
+This task uses ReRunMe in order to read continuously from the ultrasound sensor and update the distance
+
+`measure_time`
+
+This function is called inside the SytTickHandler, it checks if the flag is raised and increments the value of time if it is. 
+
+`buzzer_task`
+
+This function checks if the measured distance is less than a certain threshold. if it is, it toggles the buzzer pin and uses ReRunMe to run again after a time period proportional to the distance. 
+if the distance is not within the threshold, the function disables the buzzer and ReRuns again with delay 10 ticks to validate the new distance.
+
+### Priority Choices
+
+The highest priority was given to the bigger and less frequent task which is reading from the ultrasound sensor, while lower priority was given to the buzzer task. 
+ 
 
 
 ## License
