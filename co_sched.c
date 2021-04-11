@@ -1,138 +1,146 @@
 #include <stdlib.h>
 #include "co_sched.h"
 #include "co_sched_API.h"
+#include <string.h>
 
-
-volatile struct Qnode * readyQ_root;
-volatile struct Qnode * delayedQ_root;
-volatile struct Qnode * running;
+struct Qnode * readyQ_root;    
+struct Qnode * delayedQ_root;
+struct Qnode running;
+int rq_e, dq_e, rq_len, dq_len;
 volatile int ms_counter;
 volatile int coSched_tick_counter;
 
 int Init()
 {
-    short state = 0;
-		ms_counter = 0;
-		coSched_tick_counter = 0;
-    readyQ_root = NULL; 
-    delayedQ_root = NULL;
-		running = NULL;
-    return state;
+		// Make  a dynamic array of initial size 50 for each of the readQ and the delayedQ
+		rq_len = 1;
+		dq_len = 1;
+		readyQ_root = (struct Qnode *)calloc(rq_len, sizeof(struct Qnode));
+		delayedQ_root = (struct Qnode *)calloc(dq_len, sizeof(struct Qnode));
+		rq_e = 0;
+		dq_e = 0;
+		return 0;
 }
+
 int QueTask(void (*task_ptr), unsigned int priority)
 {
-    short state = 0;
-		struct Qnode * node = (struct Qnode *) malloc(sizeof(struct Qnode));
-    struct Qnode * itr = readyQ_root;
-
-    if (node != NULL)
-    {
-        if (itr != NULL)
-        {    while (itr->next->priority <= priority)
-            {
-                itr=itr->next;
-                if (itr->next == NULL) break;
-
-            }
-        }
-				node -> priority = priority;
-				node -> task_ptr = task_ptr;
-				node->sleep_time = 0;
-        if (itr == NULL)
+		int i;
+		struct Qnode * update_readyQ_root;
+		if(rq_e < rq_len)
+		{
+				// insert at the end of the queue 
+				readyQ_root[rq_e].priority = priority;
+				readyQ_root[rq_e].sleep_time = 0;
+				readyQ_root[rq_e].task_ptr = task_ptr;
+				
+				
+				//keep sorted on priotity
+				for(i = rq_e; i>0; i--)
 				{
-						node -> next = NULL;
-						readyQ_root = node;	
+						if(readyQ_root[i-1].priority > readyQ_root[i].priority)
+						{
+								swap(&readyQ_root[i-1], &readyQ_root[i]);
+						}
 				}
-        else 
-					if (itr->priority > priority)
-					{
-						node -> next = itr;
-						readyQ_root = node;
-					}
-					else 
-					{
-							node -> next = itr->next;
-							itr->next = node;
-					}					
-    }
-    else 
-			state = -1; //memory allocation error
-    return state;
-    
+				// increment end
+				rq_e++;
+		}
+		else
+		{
+				update_readyQ_root = (struct Qnode *)calloc(2 * rq_len, sizeof(struct Qnode));
+				while(update_readyQ_root == NULL)
+				{
+						continue;
+				}
+				memcpy(update_readyQ_root, readyQ_root, sizeof(readyQ_root[0])*rq_len); 
+				free(readyQ_root);
+				readyQ_root = update_readyQ_root;
+				rq_len *= 2;
+				QueTask(task_ptr, priority);
+		}
+		
+		return 0;
 }
 
-int ReRunME(int delay)
+
+void swap(struct Qnode *A, struct Qnode *B){
+    struct Qnode temp = *A;
+    *A = *B;
+    *B = temp;
+}
+
+
+
+
+int ReRunMe(int delay)
 {
-    short state = 0;
-
-    if (delay == 0) 
-    {
-        state = QueTask(running->task_ptr, running->priority);
+		int j;
+		struct Qnode * update_delayedQ_root;
+		if(delay == 0)
+		{
+				QueTask(running.task_ptr, running.priority);
 		}
-    else 
-    {
-				volatile struct Qnode * node = (struct Qnode *) malloc(sizeof(struct Qnode));
-				volatile struct Qnode * itr = delayedQ_root;
-        if (node != NULL)
-        {
-            while (itr != NULL)
-            {
-							if(itr->next != NULL)
-							{
-									if(itr->next->sleep_time <= delay)itr = itr->next;
-							}
-							else break;
-            }      
-						
-            node -> priority = running->priority;
-            node -> task_ptr = running->task_ptr;
-						node->sleep_time = delay;
-						if (itr == NULL)
-						{
-								node -> next = NULL;
-								delayedQ_root = node;	
-						}
-						else 
-							if (itr->sleep_time > delay)
-							{
-								node -> next = itr;
-								delayedQ_root = node;
-							
-							}
-							else
-							{
-									node -> next = itr->next;
-									itr->next = node;
-							}
-        }
-        else 
+		else
+		{
+				if(dq_e < dq_len)
 				{
-					
-					state = -1; //memory allocation error
-					
+						// insert at the end of the queue 
+						delayedQ_root[dq_e].priority = running.priority;
+						delayedQ_root[dq_e].sleep_time = delay;
+						delayedQ_root[dq_e].task_ptr = running.task_ptr;
+						
+						
+						//keep sorted on delay
+						for(j = dq_e; j>0; j--)
+						{
+								if(delayedQ_root[j-1].sleep_time > delayedQ_root[j].sleep_time)
+								{
+										swap(&delayedQ_root[j-1], &delayedQ_root[j]);
+										continue;
+								}
+						}
+						// increment dq end
+						dq_e++;
 				}
-
-    }
-    return state;
+				else
+				{
+						update_delayedQ_root = (struct Qnode *)calloc(2 * dq_len, sizeof(struct Qnode));
+						while(update_delayedQ_root == NULL)
+						{
+								continue;
+						}
+						memcpy(update_delayedQ_root, delayedQ_root, sizeof(delayedQ_root[0])*rq_len); 
+						free(delayedQ_root);
+						delayedQ_root = update_delayedQ_root;
+						dq_len *= 2;
+						ReRunMe(delay);
+				}
+		}
+		return 0;
 }
 
 int Dispatch()
 {
-    short state = 0;
-    if (readyQ_root != NULL)
-    {
-        running = readyQ_root;
-        readyQ_root = readyQ_root->next;
-        ((void(*)())running->task_ptr)();
-        if(running != NULL)
+		int k;
+		if(rq_e > 0)
+		{
+				// extract the task
+				running.priority = readyQ_root[0].priority;
+				running.task_ptr = readyQ_root[0].task_ptr;
+			
+				// decrement rq end
+				rq_e--;
+				
+				// remove the task from the queue with sort keeping
+				for(k = 0; k < rq_e; k++)
 				{
-						free((void *)running);
-						running = NULL;
+						swap(&readyQ_root[k], &readyQ_root[k+1]);
 				}
-    } 
-    else state = 1; //idle
-
-    return state;
+				
+				// run the task
+				((void(*)())running.task_ptr)();
+		}
+		return 0;
 }
 
 void coop_sched_tick(void)
@@ -143,9 +151,9 @@ void coop_sched_tick(void)
 				ms_counter = 0;
 				coSched_tick_counter+=1;
 		}
-		if(delayedQ_root != NULL)
+		if(dq_e > 0)
 		{
-				if (delayedQ_root->sleep_time == coSched_tick_counter)
+				if (delayedQ_root[0].sleep_time <= coSched_tick_counter)
 				{
 					decrementAll(coSched_tick_counter);
 					coSched_tick_counter = 0;
@@ -156,27 +164,31 @@ void coop_sched_tick(void)
 
 int decrementAll(int counter)
 {
-		volatile struct Qnode * itr;
-		itr = delayedQ_root;
-		while (itr != NULL)
+		int m;
+		int n;
+		int swap_count;
+		swap_count = 0;
+		for(m=0; m <dq_e; m++)
 		{
-			itr ->sleep_time = itr ->sleep_time - counter;
-			if (itr ->sleep_time == 0)
-			{
-				QueTask(itr -> task_ptr, itr->priority);
-				if (itr->next == NULL) 
+				delayedQ_root[m].sleep_time-=counter;
+				if(delayedQ_root[m].sleep_time <= 0)
 				{
-					free((void *)delayedQ_root);
-					delayedQ_root = NULL;
+						QueTask(delayedQ_root[m].task_ptr,delayedQ_root[m].priority);
+						swap_count++;
 				}
-				else 
-				{
-					delayedQ_root = delayedQ_root->next;
-				}
-				itr = delayedQ_root;
-			}
-			else 
-				itr = itr -> next;
 		}
-		return counter;
+		
+		for(n = 0; n<swap_count; n++)
+		{
+				for(m=0; m <(dq_e-1); m++)
+				{
+						swap(&delayedQ_root[m], &delayedQ_root[m+1]);
+						continue;
+				}
+				dq_e-=1;
+		}
+		return 0;
 }
+
+
+
