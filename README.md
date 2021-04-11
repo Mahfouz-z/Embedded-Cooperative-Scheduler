@@ -112,8 +112,6 @@ Each task blinks the on-board LED 4 times with different delays, assuimg correct
 500 -> 1000 -> 100 -> 300 -> 50
 
 
-![alt text](https://github.com/Mahfouz-z/Embedded-Cooperative-Scheduler/blob/main/media/ReadyQ_unit_test.mp4?raw=true
-# insert video
 
 ### delayedQ_unit_test
 
@@ -154,14 +152,13 @@ After the First round of executions the first three tasks will keep running as t
 According to their delay times, order of first execution, and priorities, they will continue execution in the following order: 
 **Task1 -> Task2 -> Task3**
 with delays **250 -> 50 -> 500**
-![alt text](https://github.com/Mahfouz-z/Embedded-Cooperative-Scheduler/blob/main/media/ReadyQ_unit_test.mp4?raw=true)
-# insert video
 
 ## Application 1: Ambient temperature monitor
 This application aims at measuring the temperature from a temperature sensor and compare it to a critical temperature. This critical temperature is preset to 30 degrees Celsius in the application code. The application pulls the temperature from the temperature sensor each 30 seconds, after comparing it with the critical temperature, the micro controller fires an alarm (an LED) if the measured temperature is above the critical temperature. The alarm is only turned off when the temperature is back to lower than the critical value. Furthermore, the application allows a user to edit the predefined critical temperature by connecting the micro controller’s UART 1 through an FTDI to a terminal emulator on any desktop (in our case Tera Term). We implement this application using the implemented cooperative scheduler and cubemx.
 
 ### Components and Connections
 We use STM32L432 as our microcontroller unit, an FTDI, and DS3231. The microcontroller reads the temperature from the DS3231 chip through i2c3 peripheral. Furthermore, it is connected to the PC through the FTDI as discussed in the above section.
+
 ![alt text](https://github.com/Mahfouz-z/Embedded-Cooperative-Scheduler/blob/main/media/application_1_circuit_diagram.jpg?raw=true)
 
 ### Application API Explanation
