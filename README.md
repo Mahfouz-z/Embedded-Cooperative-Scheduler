@@ -149,10 +149,81 @@ Each task blinks the on-board LED 4 times with different delays, assuming correc
 75 -> 300 -> 250 -> 50 -> 500
 
 After the First round of executions the first three tasks will keep running as they insert themselves into the delayedQ using ReRunMe. 
-According to their delay times, order of first execution, and priorties, they will continue execution in the following order: 
+According to their delay times, order of first execution, and priorities, they will continue execution in the following order: 
 **Task1 -> Task2 -> Task3**
 with delays **250 -> 50 -> 500**
 # insert video
+
+
+
+## Application 2: Parking sensor
+ The program reads data from the ultrasound sensor and calculates the distance of the nearest objects from this data. Then the buzzer is used to produce beeps, the frequency of the beeps reflect the distance of the object from the sensor. 
+
+### Components
+In this application, we use the MCU board, a buzzer, and an Ultrasound sensor.
+
+### Implementation 
+
+This application consists of two tasks; one for reading from the sensor and processing its data, and another one for running the buzzer at the appropriate delays. 
+
+`hcsr04_read`
+
+This function handles the ultrasound sensor. it pulls the pin connected to the TRIG pin of the ultrasonic sensor HIGH for 10 us then it receives data from the ECHO pin. the ECHO pin is set to high for a time period proportional to the distance of the detected object. a flag is raised inside this function for the time the ECHO pin is set to HIGH. 
+during this time, the SytTickHandler interrupt is used to count this time by calling another function `measure_time` 
+distance is calculated using the time that has been incremented during the flag raise. 
+This task uses ReRunMe in order to read continuously from the ultrasound sensor and update the distance
+
+`measure_time`
+
+This function is called inside the SytTickHandler, it checks if the flag is raised and increments the value of time if it is. 
+
+`buzzer_task`
+
+This function checks if the measured distance is less than a certain threshold. if it is, it toggles the buzzer pin and uses ReRunMe to run again after a time period proportional to the distance. 
+if the distance is not within the threshold, the function disables the buzzer and ReRuns again with delay 10 ticks to validate the new distance. 
+
+## Application 1: Ambient temperature monitor
+This application aims at measuring the temperature from a temperature sensor and compare it to a critical temperature. This critical temperature is preset to 30 degrees Celsius in the application code. The application pulls the temperature from the temperature sensor each 30 seconds, after comparing it with the critical temperature, the micro controller fires an alarm (an LED) if the measured temperature is above the critical temperature. The alarm is only turned off when the temperature is back to lower than the critical value. Furthermore, the application allows a user to edit the predefined critical temperature by connecting the micro controller’s UART 1 through an FTDI to a terminal emulator on any desktop (in our case Tera Term). We implement this application using the implemented cooperative scheduler and cubemx.
+
+### Components and Connections
+We use STM32L432 as our microcontroller unit, an FTDI, and DS3231. The microcontroller reads the temperature from the DS3231 chip through i2c3 peripheral. Furthermore, it is connected to the PC through the FTDI as discussed in the above section.
+
+### Application API Explanation
+
+`void init_I2C_UART_task(void)`
+
+The above function enables the interrupt for UART 1 that operates on a baud rate of 9600 with 8N1 serial configuration. Furthermore, it performs a check on the I2C connections to make sure that the temperature sensor is connected and ready to send the data. This function . This function is enqueued in the main before the loop and runs for one time.
+
+
+
+
+
+
+`void update_temprature_task(void)`
+
+This is a periodic task that requeues itself with a delay of 300 ticks equivalent to 30 seconds. It is enqueued one time in the main function, then it keeps requeuing itself based on the periodic time mentioned above. This task calls “float read_temprature(void)” routine that returns the temperature value. This task would enqueue “void alarm_led_toggle_task(void)” task in case the temperature violated the critical value.
+
+`float read_temprature(void)`
+
+This function initiates an I2C communication with the temperature sensor to read the temperature value. Before reading the temperature, this function forces the sensor to update its internal register to obtain a fresh value from the register. We note that the sensor automatically updates itself on a period of 64 seconds and since we need the data each 30 seconds, we do the force conversion to get fresh data.
+
+`void alarm_led_toggle_task(void)`
+
+This task toggles the led and request itself till its flag is zeroed from either the update_temprature_task() or update_critical_temprature(). When the flag is zeroed, this task enqueues “void alarm_led_off_task(void)” that will make sure that the led alarm is turned off.
+
+`void alarm_led_off_task(void)`
+
+A task enqueued by the toggle function to turn off the LED.
+
+`void receive_uart(void)`
+
+This function is enqueued into the ready queue from the UART interrupt handler. It receives the UART data byte by byte into a buffer till it finds windows endl characters “\r\n”. Then it enqueues the “update_critical_temprature” that uses this buffer, convert it to float, and update the value of critical temperature.
+
+`void update_critical_temprature(void)`
+
+Converts the critical temperature value characters received on the UART to a float and use it to update the temperature critical value. It echoes the updated value on the serial port. Furthermore, it could enqueue the alarm task if the current temperature is more than the new critical temperature. Also, it could lower the flag checked by the alarm toggling task to terminate it in case of a critical temperature higher than the current temperature.
+
+
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
