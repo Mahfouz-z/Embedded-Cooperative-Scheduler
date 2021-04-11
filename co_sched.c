@@ -44,10 +44,16 @@ int QueTask(void (*task_ptr), unsigned int priority)
 						readyQ_root = node;	
 				}
         else 
-				{
-						node -> next = itr->next;
-						itr->next = node;
-				}					
+					if (itr->priority > priority)
+					{
+						node -> next = itr;
+						readyQ_root = node;
+					}
+					else 
+					{
+							node -> next = itr->next;
+							itr->next = node;
+					}					
     }
     else 
 			state = -1; //memory allocation error
