@@ -159,10 +159,10 @@ with delays **250 -> 50 -> 500**
 ## Application 2: Parking sensor
  The program reads data from the ultrasound sensor and calculates the distance of the nearest objects from this data. Then the buzzer is used to produce beeps, the frequency of the beeps reflect the distance of the object from the sensor. 
 
-### Components
+### Components and Connections
 In this application, we use the MCU board, a buzzer, and an Ultrasound sensor.
 
-### Implementation 
+### Application API Explanation
 
 This application consists of two tasks; one for reading from the sensor and processing its data, and another one for running the buzzer at the appropriate delays. 
 
@@ -180,7 +180,12 @@ This function is called inside the SytTickHandler, it checks if the flag is rais
 `buzzer_task`
 
 This function checks if the measured distance is less than a certain threshold. if it is, it toggles the buzzer pin and uses ReRunMe to run again after a time period proportional to the distance. 
-if the distance is not within the threshold, the function disables the buzzer and ReRuns again with delay 10 ticks to validate the new distance. 
+if the distance is not within the threshold, the function disables the buzzer and ReRuns again with delay 10 ticks to validate the new distance.
+
+### Priority Choices
+
+The highest priority was given to the bigger and less frequent task which is reading from the ultrasound sensor, while lower priority was given to the buzzer task. 
+ 
 
 ## Application 1: Ambient temperature monitor
 This application aims at measuring the temperature from a temperature sensor and compare it to a critical temperature. This critical temperature is preset to 30 degrees Celsius in the application code. The application pulls the temperature from the temperature sensor each 30 seconds, after comparing it with the critical temperature, the micro controller fires an alarm (an LED) if the measured temperature is above the critical temperature. The alarm is only turned off when the temperature is back to lower than the critical value. Furthermore, the application allows a user to edit the predefined critical temperature by connecting the micro controller’s UART 1 through an FTDI to a terminal emulator on any desktop (in our case Tera Term). We implement this application using the implemented cooperative scheduler and cubemx.
@@ -193,11 +198,6 @@ We use STM32L432 as our microcontroller unit, an FTDI, and DS3231. The microcont
 `void init_I2C_UART_task(void)`
 
 The above function enables the interrupt for UART 1 that operates on a baud rate of 9600 with 8N1 serial configuration. Furthermore, it performs a check on the I2C connections to make sure that the temperature sensor is connected and ready to send the data. This function . This function is enqueued in the main before the loop and runs for one time.
-
-
-
-
-
 
 `void update_temprature_task(void)`
 
@@ -223,6 +223,9 @@ This function is enqueued into the ready queue from the UART interrupt handler. 
 
 Converts the critical temperature value characters received on the UART to a float and use it to update the temperature critical value. It echoes the updated value on the serial port. Furthermore, it could enqueue the alarm task if the current temperature is more than the new critical temperature. Also, it could lower the flag checked by the alarm toggling task to terminate it in case of a critical temperature higher than the current temperature.
 
+### Priority Choices
+
+Tasks that run at initialization time only were given the highest priority. After that comes the communication tasks at equal priority for both the UART and the I2C tasks. Finally the least priority was given to the most periodic task the LED blinking.
 
 
 ## License
