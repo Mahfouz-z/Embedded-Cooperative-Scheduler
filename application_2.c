@@ -11,7 +11,6 @@ volatile uint32_t flag=0;
 
 void buzzer_task()
 {
-	int err = 0;
 	if (distance < 20 )
 	{
 		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
