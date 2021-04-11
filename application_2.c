@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "co_sched_API.h"
 #include "application_2.h"
+#include "co_sched.h"
 
 
 volatile uint32_t distance=200;
@@ -11,30 +12,21 @@ volatile uint32_t flag=0;
 void buzzer_task()
 {
 	int err = 0;
-	if (distance < 50 )
+	if (distance < 20 )
 	{
 		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
-		err = ReRunME(distance);
-		while (err == -1)
-		{	
-			err = ReRunME(distance);
-		}
+		ReRunMe(distance*2);
 	}
 	else 
 	{
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
-		err = ReRunME(10);
-		while (err == -1)
-		{	
-			err = ReRunME(10);
-		}
+		ReRunMe(10);
 	}
 	
 }
 
 void hcsr04_read ()
 {
-	int err = 0;
  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);  // pull the TRIG pin HIGH
  HAL_Delay(2);  // wait for 2 us
  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET);  // pull the TRIG pin HIGH
@@ -50,11 +42,7 @@ void hcsr04_read ()
 	
  distance = time * 3.4/2;
  time = 0;
- err = ReRunME(4);
-	while (err == -1)
-	{	
-		err = ReRunME(4);
-	}
+ ReRunMe(4);
 }
 
 	
