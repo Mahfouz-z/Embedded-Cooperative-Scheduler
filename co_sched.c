@@ -11,7 +11,7 @@ volatile int coSched_tick_counter;
 
 int Init()
 {
-    int state = 0;
+    short state = 0;
 		ms_counter = 0;
 		coSched_tick_counter = 0;
     readyQ_root = NULL; 
@@ -21,8 +21,8 @@ int Init()
 }
 int QueTask(void (*task_ptr), unsigned int priority)
 {
-    int state = 0;
-    struct Qnode * node = (struct Qnode *) malloc(sizeof(struct Qnode));
+    short state = 0;
+		struct Qnode * node = (struct Qnode *) malloc(sizeof(struct Qnode));
     struct Qnode * itr = readyQ_root;
 
     if (node != NULL)
@@ -49,14 +49,15 @@ int QueTask(void (*task_ptr), unsigned int priority)
 						itr->next = node;
 				}					
     }
-    else state = -1; //memory allocation error
+    else 
+			state = -1; //memory allocation error
     return state;
     
 }
 
 int ReRunME(int delay)
 {
-    int state = 0;
+    short state = 0;
 
     if (delay == 0) 
     {
@@ -111,7 +112,7 @@ int ReRunME(int delay)
 
 int Dispatch()
 {
-    int state = 0;
+    short state = 0;
     if (readyQ_root != NULL)
     {
         running = readyQ_root;
