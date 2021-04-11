@@ -57,6 +57,12 @@ void update_critical_temprature(void)
 				i++;
 		}
 		sscanf(value_buffer,"%f",&critical_temp);
+		if(temp >= critical_temp && alarm_flag == 0) 
+		{
+				alarm_flag = 1;
+				QueTask(alarm_led_toggle_task, 2);
+		}
+		else if(temp < critical_temp && alarm_flag == 1) alarm_flag = 0;		
 		HAL_UART_Transmit(&huart1, (unsigned char *)success_message, sizeof(success_message), HAL_MAX_DELAY);
 		HAL_UART_Transmit(&huart1, (unsigned char *)confirm_temp_message, sizeof(confirm_temp_message), HAL_MAX_DELAY);
 		HAL_UART_Transmit(&huart1, (unsigned char *)value_buffer, sizeof(value_buffer), HAL_MAX_DELAY);
@@ -115,8 +121,8 @@ void update_temprature_task(void)
 		}
 		else if(temp < critical_temp && alarm_flag == 1) alarm_flag = 0;
 			
-		ReRunMe(60); // rerun after 3 seconds
-		// ReRunMe(600) rerun after 30 seconds 
+		// ReRunMe(60); // rerun after 3 seconds
+		ReRunMe(600); // rerun after 30 seconds 
 }
 
 float read_temprature(void)
