@@ -13,7 +13,7 @@ Inside the ```SysTick_Handler``` insert the function ```coop_sched_tick(); ``` o
 ### Scheduling Tasks
 Initialise the scheduler using ```Init()```
 
-Insert your tasks into the queue using ```QueTask()``` that accepts two arguments; the function name and its priority.
+Insert your tasks into the queue using ```QueTask()``` that accepts the function name and its priority.
 
 Use ```Dispatch()``` to execute the ready tasks.
 
@@ -77,8 +77,82 @@ This function is called inside the main `while(1)` loop, so it gets called after
 This function uses the system ticks to produce scheduler ticks at a different rate. The scheduler ticks equal 50 ms. 
 At every scheduler tick, this function checks the delayedQ minimum sleeping_time and it decrements the sleeping_time for all Qnodes in the delayedQ using the function `decrementAll` when the number of scheduler ticks=min sleeping_time. 
 
+## Unit Tests
+
+### readyQ_unit_test
+
+This test is designed to test the following:
+- correct initialization of the scheduler 
+- sorting of readyQ is done correctly
+- correct functionality of `QueTask`
+- correct functionality of `Dispatch`
+
+The following tasks are inserting into the readyQ using `QueTask`.
+
+**Task1 ->** Blinking the on-board LED 4 times with delay 500 ms.
+
+**Task2 ->** Blinking the on-board LED 4 times with delay 1000 ms.
+
+**Task3 ->** Blinking the on-board LED 4 times with delay 100 ms.
+
+**Task4 ->** Blinking the on-board LED 4 times with delay 300 ms.
+
+**Task5 ->** Blinking the on-board LED 4 times with delay 50 ms.
+
+They are inserted into the readyQ with priorities = their number (ie; Task1 has priority 1) in an order different to their priorities. 
+
+**Insertion order:** Task5 -> Task3 -> Task1 -> Task2 -> Task4
+
+**Execution order:** Ascending according to their priorities 
+
+Task1 -> Task2 -> Task3 -> Task4 -> Task5 
+
+Each task blinks the on-board LED 4 times with different delays, assuimg correct readyQ they delays will be in this order:
+
+500 -> 1000 -> 100 -> 300 -> 50
+
+# insert video
+
+### readyQ_unit_test
+
+This test is designed to test the following:
+- correct initialization of the scheduler
+- sorting of delayedQ is done correctly on sleeping_time
+- sorting of readyQ is done correctly on priority
+- correct functionality of `ReRunMe`
+- correct functionality of `QueTask`
+- correct functionality of `Dispatch`
+
+The following tasks are inserting into the readyQ using `QueTask` with different priorities.
+
+**Task1 ->** Blinking the on-board LED 4 times with delay 250 ms and ReRuns itself with delay 15 ticks. Priority = 0.
+
+**Task2 ->** Blinking the on-board LED 4 times with delay 500 ms and ReRuns itself with delay 10 ticks. Priority = 1.
+
+**Task3 ->** Blinking the on-board LED 4 times with delay 50 ms and ReRuns itself with delay 0 ticks. Priority = 1.
+
+**Task4 ->** Blinking the on-board LED 4 times with delay 300 ms. Priority = 0.
+
+**Task5 ->** Blinking the on-board LED 4 times with delay 75 ms.
+Priority = 0.
 
 
+**Insertion order:** Task5 -> Task4 -> Task3 -> Task1 -> Task2
+
+**Execution order:** assuming correct readyQ priorites, the tasks should be performed in the following order at the first cycle of each:
+    
+Task5 -> Task4 -> Task1 -> Task2 -> Task3
+
+
+Each task blinks the on-board LED 4 times with different delays, assuming correct readyQ they delays will be in this order:
+
+75 -> 300 -> 250 -> 50 -> 500
+
+After the First round of executions the first three tasks will keep running as they insert themselves into the delayedQ using ReRunMe. 
+According to their delay times, order of first execution, and priorties, they will continue execution in the following order: 
+**Task1 -> Task2 -> Task3**
+with delays **250 -> 50 -> 500**
+# insert video
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)

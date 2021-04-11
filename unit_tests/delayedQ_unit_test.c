@@ -73,9 +73,9 @@ int main(void)
     QueTask(Task2, 1);
     
     /*assuming correct readyQ priorites, the tasks should be performed in the following order at first:
-    Task5 -> Task4 -> Task1 -> Task2 -> Task3 
-    Each task blinks the on-board LED 4 times with different delays, assuimg correct readyQ they delays will be in this order:
-    50 -> 300 -> 250 -> 500 -> 50
+    Task5 -> Task4 -> Task1 -> Task3 -> Task2 
+    Each task blinks the on-board LED 4 times with different delays, assuming  correct readyQ they delays will be in this order:
+    75 -> 300 -> 250 -> 50 -> 500
     Then on caling the ReRunMe inside tasks 1,2, and 3 with different delay times they should run in the following order:
     Assuming correct DelayedQ sorting
     Task1 -> Task3 -> Task2
