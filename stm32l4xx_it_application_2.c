@@ -27,6 +27,7 @@
 #include "co_sched_API.h"
 #include "co_sched.h"
 #include <stdlib.h>
+#include "application_2.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -190,15 +191,7 @@ void PendSV_Handler(void)
 void SysTick_Handler(void)
 {
   /* USER CODE BEGIN SysTick_IRQn 0 */
-
-	extern uint32_t time;
-	extern uint32_t flag;
-	
-	if (flag == 1 )    // while the pin is high
-  {
-		time++;   // measure time for which the pin is high
-  }
-
+	measure_time();
 	
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
