@@ -12,9 +12,9 @@ volatile int coSched_tick_counter;
 
 int Init()
 {
-		// Make  a dynamic array of initial size 50 for each of the readQ and the delayedQ
-		rq_len = 1;
-		dq_len = 1;
+		// Make  a dynamic array of initial size 20 for each of the readQ and the delayedQ
+		rq_len = 20;
+		dq_len = 20;
 		readyQ_root = (struct Qnode *)calloc(rq_len, sizeof(struct Qnode));
 		delayedQ_root = (struct Qnode *)calloc(dq_len, sizeof(struct Qnode));
 		rq_e = 0;
