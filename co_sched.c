@@ -22,7 +22,7 @@ int Init()
 		return 0;
 }
 
-int QueTask(void (*task_ptr), unsigned int priority)
+int QueTask(void (*task_ptr), unsigned int priority)  //inserting a task into the readyQueue according to the task priority 
 {
 		int i;
 		struct Qnode * update_readyQ_root;
@@ -72,7 +72,7 @@ void swap(struct Qnode *A, struct Qnode *B){
 
 
 
-int ReRunMe(int delay)
+int ReRunMe(int delay)  //storing the running task in the delayedQueue according to the task delay
 {
 		int j;
 		struct Qnode * update_delayedQ_root;
@@ -119,7 +119,7 @@ int ReRunMe(int delay)
 		return 0;
 }
 
-int Dispatch()
+int Dispatch() //calling the task at the top of the readyQueue for execution 
 {
 		int k;
 		if(rq_e > 0)
@@ -143,7 +143,7 @@ int Dispatch()
 		return 0;
 }
 
-void coop_sched_tick(void)
+void coop_sched_tick(void) //using systick ticks to produce scheduler ticks at a different rate 
 {
 		ms_counter++;
 		if(ms_counter == 50)
@@ -162,7 +162,7 @@ void coop_sched_tick(void)
 		else	coSched_tick_counter = 0;
 }
 
-int decrementAll(int counter)
+int decrementAll(int counter)  //decrementing the sleeping time for all tasks in the delayedQueue
 {
 		int m;
 		int n;
