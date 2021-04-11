@@ -3,42 +3,111 @@
 #include <stdio.h>
 #include "co_sched_API.h"
 
-extern I2C_HandleTypeDef hi2c1;
-extern UART_HandleTypeDef huart2;
-volatile float temp = 0;
-volatile int alarm_flag = 0;
-volatile float critical_temp = 22;
+extern I2C_HandleTypeDef hi2c3;
+extern UART_HandleTypeDef huart1;
+float temp = 0;
+int alarm_flag = 0;
+float critical_temp = 30;
 
-void init_I2C_task(void)
+
+char uart1_rec_buffer[10];
+int rec_buf_i = 0; 
+int len_temp = 0;
+
+
+void receive_uart(void)
 {
-		//check that device is ready to operate
+		char failure_message[] = {'T','E','M', 'P',' ','U','P','D','A','T', 'E',' ','F','A','I','L','E','D','\r','\n'};
+		uint8_t data_byte = NULL;
+		HAL_UART_Receive (&huart1, &data_byte, sizeof(data_byte), 1000);
+		
+		uart1_rec_buffer[rec_buf_i] = data_byte;
+		rec_buf_i++;
+		if(rec_buf_i == 10)
+		{
+				rec_buf_i = 0; // out of memory bounds, rewrite data
+				len_temp = 0;
+				HAL_UART_Transmit(&huart1, (unsigned char *)failure_message, sizeof(failure_message), HAL_MAX_DELAY);
+		}
+		if(data_byte == '\n') // received a full temprature value 
+		{
+				len_temp = rec_buf_i - 2;
+				rec_buf_i = 0;
+				QueTask(update_critical_temprature, 1);
+		}
+		__HAL_UART_ENABLE_IT(&huart1,UART_IT_RXNE);
+}
+void update_critical_temprature(void)
+{
+		char success_message[] = {'T','E','M', 'P',' ','U','P','D','A','T', 'E',' ','S','U','C','C','E','S','S','\r','\n'};
+		char confirm_temp_message[] = {'C','R','I','T','I','C','A','L',' ','T','E','M','P',':'};
+		char endl[] = {'\r', '\n'};
+		char value_buffer[6];
+		int i;
+		
+		i = 0;
+		while(uart1_rec_buffer[i] != '\r' && i < 6)
+		{
+				value_buffer[i] =  uart1_rec_buffer[i];
+				i++;
+		}
+		while (i < 6)
+		{
+				value_buffer[i]=0;
+				i++;
+		}
+		sscanf(value_buffer,"%f",&critical_temp);
+		HAL_UART_Transmit(&huart1, (unsigned char *)success_message, sizeof(success_message), HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart1, (unsigned char *)confirm_temp_message, sizeof(confirm_temp_message), HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart1, (unsigned char *)value_buffer, sizeof(value_buffer), HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart1, (unsigned char *)endl, sizeof(endl), HAL_MAX_DELAY);
+}
+
+void init_I2C_UART_task(void)
+{
+		// init UART receive
+		__HAL_UART_ENABLE_IT(&huart1,UART_IT_RXNE);
+		//check that I2C device is ready to operate
 		char success_message[] = {'I','2','C',' ','S','U','C','C','E','S','S','\r','\n'};
 		char failure_message[] = {'I','2','C',' ','F','A','I','L','E','D','\r','\n'};
-		if (HAL_I2C_IsDeviceReady(&hi2c1, 0xD0, 10, HAL_MAX_DELAY) == HAL_OK)
+		if (HAL_I2C_IsDeviceReady(&hi2c3, 0xD0, 10, HAL_MAX_DELAY) == HAL_OK)
 		{
-				HAL_UART_Transmit(&huart2, (unsigned char *)success_message, sizeof(success_message), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart1, (unsigned char *)success_message, sizeof(success_message), HAL_MAX_DELAY);
 		}
 		else
 		{
-				HAL_UART_Transmit(&huart2, (unsigned char *)failure_message, sizeof(failure_message), HAL_MAX_DELAY);
+				HAL_UART_Transmit(&huart1, (unsigned char *)failure_message, sizeof(failure_message), HAL_MAX_DELAY);
 		}
 }
 
 void alarm_led_toggle_task(void)
 {
-		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_4);
-		if(alarm_flag == 1) ReRunMe(10);
-		else QueTask(alarm_led_off_task, 7);
+		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
+		if(alarm_flag == 1) 
+		{
+				ReRunMe(5);
+		}
+		else QueTask(alarm_led_off_task, 2);
 }
 
 void alarm_led_off_task(void)
 {
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_RESET);
 }
 
 void update_temprature_task(void)
 {
 		float temp = read_temprature();
+		char temp_message[] = {'C', 'U', 'R', 'R', ' ', 'T', 'E', 'M', 'P', ':'};
+		char temp_holder[8];
+		char endl[] = {'\r', '\n'};
+		
+		snprintf(temp_holder, sizeof(temp_holder), "%f", temp);
+		
+		HAL_UART_Transmit(&huart1, (unsigned char *)temp_message, sizeof(temp_message), HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart1, (unsigned char *)temp_holder, sizeof(temp_holder), HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart1, (unsigned char *)endl, sizeof(endl), HAL_MAX_DELAY);
+		
 		if(temp >= critical_temp && alarm_flag == 0) 
 		{
 				alarm_flag = 1;
@@ -58,51 +127,26 @@ float read_temprature(void)
 		status_reg[0] = 0x0F; 	// Status Register Address	
 		ctrl_reg[0] = 0x0E; 		// Control Register Address
 		// read status register
-		HAL_I2C_Mem_Read(&hi2c1, 0xD0, status_reg[0], 1, &status_reg[1], 1,10);
+		HAL_I2C_Mem_Read(&hi2c3, 0xD0, status_reg[0], 1, &status_reg[1], 1,10);
 
 		// If the controller is not executing TCXO function, force it.
 		if((status_reg[1]&0x4) == 0)
 		{
 				// read current status register to rewrite it
-				HAL_I2C_Mem_Read(&hi2c1, 0xD0, ctrl_reg[0], 1, &ctrl_reg[1], 1,10);
+				HAL_I2C_Mem_Read(&hi2c3, 0xD0, ctrl_reg[0], 1, &ctrl_reg[1], 1,10);
 				ctrl_reg[1] |= 0x20; // set the conv bit to force temprature conversion of temprature to digital value
-				HAL_I2C_Mem_Write(&hi2c1, 0xD0, ctrl_reg[0], 1, &ctrl_reg[1], 1, 10);
+				HAL_I2C_Mem_Write(&hi2c3, 0xD0, ctrl_reg[0], 1, &ctrl_reg[1], 1, 10);
 		}
 
 		//read temprature
 		temp_int_buffer[0] = 0x11;    // Address of int part of temprature
 		temp_float_buffer[0] = 0x12;	// Address of float part of temprature
-		HAL_I2C_Mem_Read(&hi2c1, 0xD0, temp_int_buffer[0], 1, &temp_int_buffer[1], 1, 10);
-		HAL_I2C_Mem_Read(&hi2c1, 0xD0, temp_float_buffer[0], 1, &temp_float_buffer[1], 1, 10);
-		
-//		if((temp_int_buffer[1] & 7) == 0)
-//		{
-//				// positive number
-//				temp = temp_int_buffer[1]  + (temp_float_buffer[1]>>6) / 4.0; 
-//				HAL_Delay(1);
-//		}
-//		else
-//		{
-//				// negative number
-//				temp_int_buffer[1] = ~temp_int_buffer[1] + 1;
-//				temp = - temp_int_buffer[1]  - (temp_float_buffer[1]>>6) / 4.0; 
-//				HAL_Delay(1);
-//		}
+		HAL_I2C_Mem_Read(&hi2c3, 0xD0, temp_int_buffer[0], 1, &temp_int_buffer[1], 1, 10);
+		HAL_I2C_Mem_Read(&hi2c3, 0xD0, temp_float_buffer[0], 1, &temp_float_buffer[1], 1, 10);
+
 		temp = temp_int_buffer[1]  + (temp_float_buffer[1]>>6) / 4.0; 
 		HAL_Delay(1);
 		return temp;
-	
-			//send temprature integer part register address 11h to read from
-//		HAL_I2C_Master_Transmit(&hi2c1, 0xD0, temp_int_buffer, 1, 10);
-
-//		//read data of register 11h to temp_int_buffer[1]
-//		HAL_I2C_Master_Receive(&hi2c1, 0xD1, temp_int_buffer+1, 1, 10);
-//	
-//		//send temprature float part register address 12h to read from
-//		HAL_I2C_Master_Transmit(&hi2c1, 0xD0, temp_float_buffer, 1, 10);
-
-//		//read data of register 12h to temp_float_buffer[1]
-//		HAL_I2C_Master_Receive(&hi2c1, 0xD1, temp_float_buffer+1, 1, 10);
 	
 }	
 
