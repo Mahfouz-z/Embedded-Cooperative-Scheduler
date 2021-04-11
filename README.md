@@ -13,7 +13,7 @@ Inside the ```SysTick_Handler``` insert the function ```coop_sched_tick(); ``` o
 ### Scheduling Tasks
 Initialise the scheduler using ```Init()```
 
-Insert your tasks into the queue using ```QueTask()``` that accepts the function name and its priority.
+Insert your tasks into the queue using ```QueTask()``` that accepts two arguments; the function name and its priority.
 
 Use ```Dispatch()``` to execute the ready tasks.
 
