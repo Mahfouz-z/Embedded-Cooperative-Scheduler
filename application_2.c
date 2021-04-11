@@ -25,6 +25,14 @@ void buzzer_task()
 	
 }
 
+void measure_time()
+{
+	if (flag == 1 )    // while the pin is high
+	{
+		time++;   // measure time for which the pin is high
+	}
+}
+
 void hcsr04_read ()
 {
  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);  // pull the TRIG pin HIGH
