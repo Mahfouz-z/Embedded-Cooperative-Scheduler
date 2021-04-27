@@ -111,6 +111,8 @@ Each task blinks the on-board LED 4 times with different delays, assuimg correct
 
 500 -> 1000 -> 100 -> 300 -> 50
 
+[unit test Video](https://github.com/Mahfouz-z/Embedded-Cooperative-Scheduler/blob/main/media/ReadyQ_unit_test.mp4)
+
 
 
 ### delayedQ_unit_test
@@ -153,8 +155,14 @@ According to their delay times, order of first execution, and priorities, they w
 **Task1 -> Task2 -> Task3**
 with delays **250 -> 50 -> 500**
 
+[unit test video](https://github.com/Mahfouz-z/Embedded-Cooperative-Scheduler/blob/main/media/delayedQ_unit_test.mp4)
+
+
 ## Application 1: Ambient temperature monitor
 This application aims at measuring the temperature from a temperature sensor and compare it to a critical temperature. This critical temperature is preset to 30 degrees Celsius in the application code. The application pulls the temperature from the temperature sensor each 30 seconds, after comparing it with the critical temperature, the micro controller fires an alarm (an LED) if the measured temperature is above the critical temperature. The alarm is only turned off when the temperature is back to lower than the critical value. Furthermore, the application allows a user to edit the predefined critical temperature by connecting the micro controller’s UART 1 through an FTDI to a terminal emulator on any desktop (in our case Tera Term). We implement this application using the implemented cooperative scheduler and cubemx.
+
+### Application 1 Demo
+[Demo Video](https://drive.google.com/file/d/1IqMptFGJMs-nHC_BAYOpRjc3JRlMp5VQ/view?usp=sharing)
 
 ### Components and Connections
 We use STM32L432 as our microcontroller unit, an FTDI, and DS3231. The microcontroller reads the temperature from the DS3231 chip through i2c3 peripheral. Furthermore, it is connected to the PC through the FTDI as discussed in the above section.
@@ -200,6 +208,9 @@ Tasks that run at initialization time only were given the highest priority. Afte
 
 ## Application 2: Parking sensor
  The program reads data from the ultrasound sensor and calculates the distance of the nearest objects from this data. Then the buzzer is used to produce beeps, the frequency of the beeps reflect the distance of the object from the sensor. 
+
+### Application 2 Demo
+[Demo Video](https://drive.google.com/file/d/1vbePU137_2JWaHCBa_vhKhS03ltz6JWw/view?usp=sharing)
 
 ### Components and Connections
 In this application, we use the MCU board, a buzzer, and an Ultrasound sensor.
